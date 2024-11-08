@@ -1,0 +1,7 @@
+langchain-community
+langchain-chroma
+langchain-ollama
+fastembed
+langchain
+PyMuPDF
+chromadb
