@@ -1,11 +1,13 @@
 import flask
 from ia import llama_ia
 app = flask.Flask(__name__)
+import os
 
 @app.route("/api/ia", methods=["POST"])
 def index():
     data = flask.request.get_json()
-    res = llama_ia(data["quest"], data["file_path"])
+    file_path = os.path.join("uploads", data["file"])
+    res = llama_ia(data["quest"], file_path)
     return res
 
 

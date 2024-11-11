@@ -5,15 +5,24 @@ from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
+import os
 
 
-def llama_ia(quest, file_path):
+
+def llama_ia(quest, file):
+
+    print(file)
+
+    file_path = os.path.join("uploads", file)
+
+    print(file_path)
 
     # Definimos el modelo de llm que vamos a utilizar
     llm = ChatOllama(model="llama3.2:1b")
 
     # Definimos el loader del pdf
     loader = PyMuPDFLoader(file_path)
+
 
     # Cargamos el contenido del pdf
     data_pdf = loader.load()
