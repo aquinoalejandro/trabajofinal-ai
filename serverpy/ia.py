@@ -5,43 +5,28 @@ from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-import os
 
+def llama_ia(quest, file_path):
+    print(file_path)  # nombre del archivo recibido # ruta completa del archivo
 
-
-def llama_ia(quest, file):
-
-    print(file)
-
-    file_path = os.path.join("uploads", file)
-
-    print(file_path)
-
-    # Definimos el modelo de llm que vamos a utilizar
+    # Inicializar el modelo de lenguaje
     llm = ChatOllama(model="llama3.2:1b")
 
-    # Definimos el loader del pdf
+    # Cargar el contenido del PDF
     loader = PyMuPDFLoader(file_path)
+    data_pdf = loader.load()  # Cargar datos del PDF
 
-
-    # Cargamos el contenido del pdf
-    data_pdf = loader.load()
-
-    # Definimos el tamaño de los chunks y el overlap (superposición de los chunks)
+    # Dividir el contenido en chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
-
-    # Dividimos el contenido del pdf en chunks
     chunks = text_splitter.split_documents(data_pdf)
 
-    # Definimos el modelo de embeddings que vamos a utilizar
+    # Crear los embeddings de los chunks
     embed_model = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Definimos el directorio donde se va a guardar la base de datos
+    # Configurar la base de datos de embeddings
     persist_db = "chroma_db_dir"
-    # Definimos el nombre de la colección
     collection_db = "chroma_collection"
 
-    # Creamos la base de datos con los chunks
     vs = Chroma.from_documents(
         documents=chunks,
         embedding=embed_model,
@@ -49,35 +34,26 @@ def llama_ia(quest, file):
         collection_name=collection_db
     )
 
-    # Creamos el retriever
-    vectorstore = Chroma(
-        embedding_function=embed_model,
-        persist_directory=persist_db,
-        collection_name=collection_db
-    )
+    # Configurar el vectorstore
+    retriever = vs.as_retriever(search_kwargs={'k': 5})
 
-    retriever = vectorstore.as_retriever(
-        search_kwargs={'k': 5} # Cantidad de chunks a retornar
-    )
-
-    # Definimos el template de la pregunta
+    # Configurar el template para la pregunta
     custom_prompt_template = """Usa la siguiente información para responder a la pregunta del usuario.
     Si la respuesta no se encuentra en dicha información, di que no sabes la respuesta.
 
     Contexto: {context}
     Pregunta: {question}
 
-    Solo devuelve la respuesta útil a continuación y nada más. Responde siempre en español
+    Solo devuelve la respuesta útil a continuación y nada más. Responde siempre en español.
     Respuesta útil:
     """
 
-    # Definimos el prompt template para la pregunta
     prompt = PromptTemplate(
         template=custom_prompt_template,
         input_variables=['context', 'question']
     )
 
-    # Creamos el chain de QA para realizar la búsqueda
+    # Configurar el chain de QA
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
@@ -86,10 +62,11 @@ def llama_ia(quest, file):
         chain_type_kwargs={'prompt': prompt}
     )
 
-    # Realizamos la pregunta al modelo
-    quest = input("Ingrese su pregunta: ")
+    # Realizar la pregunta usando el parámetro `quest`
     resp = qa.invoke({"query": quest})
 
-    # Mostramos la respuesta
-    return resp
-
+    # Extraer solo la respuesta útil (de la clave "result")
+    answer = resp.get("result", "No se pudo obtener una respuesta.")
+    
+    # Devolver solo la respuesta útil
+    return answer
