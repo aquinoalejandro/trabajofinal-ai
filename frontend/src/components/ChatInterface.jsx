@@ -1,37 +1,61 @@
 import React, { useState } from 'react';
-import { Send, FileText, Loader2 } from 'lucide-react';
+import { Send, FileText, Loader2, RefreshCcw  } from 'lucide-react';
+import axios from 'axios';
 
-const ChatInterface = ({ fileName }) => {
+const ChatInterface = ({ fileName, uploadedFile }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatDisabled, setChatDisabled] = useState(false);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-
+  
     const userMessage = {
       id: Date.now(),
       text: input,
       isUser: true,
     };
-
+  
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-
-    // Simulacion
-    setTimeout(() => {
-      const aiMessage = {
+  
+    try {
+      const formData = new FormData();
+      formData.append('quest', input);
+      formData.append('file', uploadedFile); 
+  
+      const response = await axios.post('http://localhost:5000/api/ai', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      const botMessage = {
         id: Date.now() + 1,
-        text: "respuesta",
+        text: response.data,
         isUser: false,
       };
-      setMessages((prev) => [...prev, aiMessage]);
+  
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      // Manejo de errores
+      const botMessage = {
+        id: Date.now() + 1,
+        text: 'Lo siento, ha ocurrido un error en el servidor. Por favor, inténtalo de nuevo más tarde.',
+        isUser: false,
+      }
+      setMessages((prev) => [...prev, botMessage]); 
+      setChatDisabled(true);
+      console.error('Error:', error);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
-
+  
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-gray-800 rounded-lg p-4 mb-4 flex items-center">
@@ -74,6 +98,7 @@ const ChatInterface = ({ fileName }) => {
 
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
+            disabled={chatDisabled}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -82,11 +107,16 @@ const ChatInterface = ({ fileName }) => {
           />
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || chatDisabled}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="h-5 w-5" />
+            {isLoading ? (
+              <RefreshCcw className="h-5 w-5 text-white animate-spin" />
+            ) : (
+              <Send className="h-5 w-5 text-white" />
+            )}
           </button>
+
         </form>
       </div>
     </div>

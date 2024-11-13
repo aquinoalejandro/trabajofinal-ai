@@ -7,15 +7,14 @@ function Ia() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   const handleFileUpload = async (file) => {
     setIsLoading(true);
-    // Simular carga del archivo
-    setTimeout(() => {
-      setFileName(file.name);
-      setIsFileUploaded(true);
-      setIsLoading(false);
-    }, 2000);
+    setFileName(file.name);
+    setUploadedFile(file);
+    setIsFileUploaded(true);
+    setIsLoading(false);
   };
 
   return (
@@ -33,7 +32,7 @@ function Ia() {
         {!isFileUploaded ? (
           <DocumentUpload onFileUpload={handleFileUpload} isLoading={isLoading} />
         ) : (
-          <ChatInterface fileName={fileName} />
+          <ChatInterface fileName={fileName} uploadedFile={uploadedFile} />
         )}
       </main>
 
