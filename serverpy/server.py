@@ -1,20 +1,35 @@
 import flask
 from ia import llama_ia
-app = flask.Flask(__name__)
+from flask_cors import CORS
 import os
+
+app = flask.Flask(__name__)
+
+CORS(app)
 
 @app.route("/api/ia", methods=["POST"])
 def index():
-    data = flask.request.get_json()
-    file_path = os.path.join("uploads", data["file"])
-    res = llama_ia(data["quest"], file_path)
+    # Verifica que el archivo está en la solicitud
+    if 'file' not in flask.request.files:
+        return "Missing file", 400
+
+    file = flask.request.files['file']  # Obtiene el archivo
+    quest = flask.request.form.get("quest")  # Obtiene otros datos del formulario
+    
+    # Verifica que los parámetros necesarios están presentes
+    if not file or file.filename == '':
+        return "Missing or empty file", 400
+    
+    if quest is None:
+        return "Missing required parameter 'quest'", 400
+
+    # Guarda el archivo en una carpeta temporal o designada
+    file_path = os.path.join("uploads", file.filename)
+    file.save(file_path)  # Guarda el archivo en el servidor
+    
+    # Procesa el archivo y la pregunta usando llama_ia
+    res = llama_ia(quest, file_path)
     return res
 
-
-@app.route("/api/ai", methods=["GET"])
-def index2():
-    return "Hola amigo, mete un pdf por post y lo respondo" 
-
-
-app.run()
-
+if __name__ == "__main__":
+    app.run(debug=True)

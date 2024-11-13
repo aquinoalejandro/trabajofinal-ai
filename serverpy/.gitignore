@@ -1,3 +1,4 @@
 chroma_db_dir
 venv
 env
+__pycache__
