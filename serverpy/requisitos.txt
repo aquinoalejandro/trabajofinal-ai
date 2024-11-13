@@ -5,3 +5,5 @@ fastembed
 langchain
 PyMuPDF
 chromadb
+flask-cors
+flask
